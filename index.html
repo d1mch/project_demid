@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Учет личных финансов</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="container">
+    <h1>Учет личных финансов</h1>
+
+    <section class="form-section">
+      <form id="transaction-form">
+        <input type="text" id="title" placeholder="Название" required />
+        <input type="number" id="amount" placeholder="Сумма" required />
+        <select id="type">
+          <option value="income">Доход</option>
+          <option value="expense">Расход</option>
+        </select>
+        <input type="date" id="date" required />
+        <input type="text" id="category" placeholder="Категория" required />
+        <button type="submit">Добавить</button>
+      </form>
+    </section>
+
+    <section class="filters">
+      <select id="filter-type">
+        <option value="all">Все типы</option>
+        <option value="income">Доход</option>
+        <option value="expense">Расход</option>
+      </select>
+      <select id="filter-category">
+        <option value="all">Все категории</option>
+      </select>
+      <button id="sort-date">Сортировать по дате</button>
+      <button id="sort-amount">Сортировать по сумме</button>
+    </section>
+
+    <section id="transactions-list"></section>
+
+    <section class="chart-section">
+      <canvas id="expense-chart" width="400" height="400"></canvas>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>

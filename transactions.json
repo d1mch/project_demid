@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "title": "Зарплата",
+    "amount": 50000,
+    "type": "income",
+    "date": "2025-06-01",
+    "category": "Работа"
+  },
+  {
+    "id": 2,
+    "title": "Покупка продуктов",
+    "amount": 3500,
+    "type": "expense",
+    "date": "2025-06-02",
+    "category": "Еда"
+  }
+]

@@ -1,0 +1,158 @@
+/* Обнуление и базовые стили */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  background-color: #f5f5f5;
+  color: #333333;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+/* Заголовок */
+h1 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 28px;
+}
+
+/* Секция формы */
+.form-section {
+  background-color: #ffffff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+#transaction-form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+#transaction-form input,
+#transaction-form select,
+#transaction-form button {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+#transaction-form button {
+  background-color: #4CAF50;
+  color: white;
+  grid-column: span 2;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+#transaction-form button:hover {
+  opacity: 0.8;
+}
+
+/* Фильтры и сортировка */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.filters select,
+.filters button {
+  padding: 8px 12px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.filters button:hover {
+  opacity: 0.8;
+}
+
+/* Диаграмма */
+.chart-section {
+  background-color: #ffffff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Список транзакций */
+#transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Карточка транзакции */
+.transaction-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-card.income {
+  border-left: 6px solid #4CAF50;
+}
+
+.transaction-card.expense {
+  border-left: 6px solid #F44336;
+}
+
+.transaction-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-info span {
+  font-size: 14px;
+}
+
+.transaction-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.transaction-actions button {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.transaction-actions button:hover {
+  opacity: 0.8;
+}
+
+.transaction-actions .edit-btn {
+  background-color: #2196F3;
+  color: white;
+}
+
+.transaction-actions .delete-btn {
+  background-color: #F44336;
+  color: white;
+}
