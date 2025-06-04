@@ -1,4 +1,3 @@
-// Получаем элементы
 const form = document.getElementById('transaction-form');
 const titleInput = document.getElementById('title');
 const amountInput = document.getElementById('amount');
@@ -38,13 +37,12 @@ let expenseChart = new Chart(ctx, {
   },
 });
 
-// Функция загрузки данных из localStorage или JSON
+
 async function loadTransactions() {
   const saved = localStorage.getItem('transactions');
   if (saved) {
     transactions = JSON.parse(saved);
   } else {
-    // Если localStorage пуст, загрузить из transactions.json
     try {
       const res = await fetch('transactions.json');
       transactions = await res.json();
@@ -58,19 +56,19 @@ async function loadTransactions() {
   applyFiltersAndSort();
 }
 
-// Сохранение в localStorage
+
 function saveTransactions() {
   localStorage.setItem('transactions', JSON.stringify(transactions));
 }
 
-// Обновление фильтра по категориям
+// обновление фильтра по категориям
 function updateCategoryFilter() {
   const categories = [...new Set(transactions.map(t => t.category))].sort();
   filterCategorySelect.innerHTML = `<option value="all">Все категории</option>` +
     categories.map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
-// Добавление транзакции
+// добавление транзакции
 form.addEventListener('submit', (e) => {
   e.preventDefault();
 
@@ -95,7 +93,7 @@ form.addEventListener('submit', (e) => {
   applyFiltersAndSort();
 });
 
-// Удаление транзакции
+// удаление транзакции
 function deleteTransaction(id) {
   transactions = transactions.filter(t => t.id !== id);
   saveTransactions();
@@ -103,7 +101,7 @@ function deleteTransaction(id) {
   applyFiltersAndSort();
 }
 
-// Рендеринг списка транзакций
+// рендеринг списка транзакций
 function renderTransactions(list) {
   if (list.length === 0) {
     transactionsList.innerHTML = `<p>Транзакции не найдены.</p>`;
@@ -123,7 +121,6 @@ function renderTransactions(list) {
     transactionsList.appendChild(card);
   });
 
-  // Вешаем обработчики удаления
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.onclick = () => {
       const id = +btn.getAttribute('data-id');
@@ -132,9 +129,8 @@ function renderTransactions(list) {
   });
 }
 
-// Обновление диаграммы (только расходы)
+// диаграмма (только расходы)
 function updateChart(list) {
-  // Фильтруем расходы
   const expenses = list.filter(t => t.type === 'expense');
   const sums = {};
   expenses.forEach(({ category, amount }) => {
@@ -144,7 +140,7 @@ function updateChart(list) {
   const labels = Object.keys(sums);
   const data = Object.values(sums);
 
-  // Цвета для категорий (можно расширять)
+  // цвета для категорий 
   const colors = [
     '#f44336', '#e57373', '#ba000d', '#ff8a80', '#d32f2f',
     '#4caf50', '#81c784', '#2e7d32', '#a5d6a7', '#388e3c'
@@ -156,7 +152,7 @@ function updateChart(list) {
   expenseChart.update();
 }
 
-// Применение фильтров и сортировки
+// применение фильтров и сортировки
 function applyFiltersAndSort() {
   const typeFilter = filterTypeSelect.value;
   const categoryFilter = filterCategorySelect.value;
@@ -167,7 +163,7 @@ function applyFiltersAndSort() {
     return true;
   });
 
-  // Сортировка (по дате или сумме, если нажата соответствующая кнопка)
+  // сортировка
   if (lastSort === 'date') {
     filteredTransactions.sort((a, b) => {
       if (sortDirection.date === 'asc') return new Date(a.date) - new Date(b.date);
@@ -182,7 +178,6 @@ function applyFiltersAndSort() {
 
   renderTransactions(filteredTransactions);
 
-  // Показывать/скрывать диаграмму в зависимости от фильтра по типу
   if (typeFilter === 'income') {
     chartSection.style.display = 'none';
   } else {
@@ -191,7 +186,7 @@ function applyFiltersAndSort() {
   }
 }
 
-// Обработчики фильтров
+
 filterTypeSelect.addEventListener('change', () => {
   applyFiltersAndSort();
 });
@@ -200,22 +195,18 @@ filterCategorySelect.addEventListener('change', () => {
   applyFiltersAndSort();
 });
 
-// Обработчики сортировки
 let lastSort = null;
 
 sortDateBtn.addEventListener('click', () => {
-  // Переключаем направление сортировки по дате
   sortDirection.date = sortDirection.date === 'asc' ? 'desc' : 'asc';
   lastSort = 'date';
   applyFiltersAndSort();
 });
 
 sortAmountBtn.addEventListener('click', () => {
-  // Переключаем направление сортировки по сумме
   sortDirection.amount = sortDirection.amount === 'asc' ? 'desc' : 'asc';
   lastSort = 'amount';
   applyFiltersAndSort();
 });
 
-// Инициализация
 loadTransactions();
