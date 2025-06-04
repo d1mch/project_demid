@@ -1,212 +1,214 @@
-const form = document.getElementById('transaction-form');
-const titleInput = document.getElementById('title');
-const amountInput = document.getElementById('amount');
-const typeSelect = document.getElementById('type');
-const dateInput = document.getElementById('date');
-const categoryInput = document.getElementById('category');
+class TransactionManager {
+  constructor() {
+    this.transactions = [];
+    this.filteredTransactions = [];
+    this.sortDirection = { date: 'desc', amount: 'desc' };
+    this.lastSort = null;
 
-const filterTypeSelect = document.getElementById('filter-type');
-const filterCategorySelect = document.getElementById('filter-category');
-const sortDateBtn = document.getElementById('sort-date');
-const sortAmountBtn = document.getElementById('sort-amount');
+    this.initElements();
+    this.initChart();
+    this.loadTransactions();
+    this.addEventListeners();
+  }
 
-const transactionsList = document.getElementById('transactions-list');
-const chartSection = document.querySelector('.chart-section');
-const ctx = document.getElementById('expense-chart').getContext('2d');
+  initElements() {
+    this.form = document.getElementById('transaction-form');
+    this.titleInput = document.getElementById('title');
+    this.amountInput = document.getElementById('amount');
+    this.typeSelect = document.getElementById('type');
+    this.dateInput = document.getElementById('date');
+    this.categoryInput = document.getElementById('category');
 
-let transactions = [];
-let filteredTransactions = [];
-let sortDirection = { date: 'desc', amount: 'desc' };
+    this.filterTypeSelect = document.getElementById('filter-type');
+    this.filterCategorySelect = document.getElementById('filter-category');
+    this.sortDateBtn = document.getElementById('sort-date');
+    this.sortAmountBtn = document.getElementById('sort-amount');
 
-let expenseChart = new Chart(ctx, {
-  type: 'pie',
-  data: {
-    labels: [],
-    datasets: [{
-      label: 'Расходы по категориям',
-      data: [],
-      backgroundColor: [],
-      borderWidth: 1,
-    }],
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { position: 'bottom' },
-    },
-  },
-});
+    this.transactionsList = document.getElementById('transactions-list');
+    this.chartSection = document.querySelector('.chart-section');
+    this.ctx = document.getElementById('expense-chart').getContext('2d');
+  }
 
+  initChart() {
+    this.expenseChart = new Chart(this.ctx, {
+      type: 'pie',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Расходы по категориям',
+          data: [],
+          backgroundColor: [],
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+      },
+    });
+  }
 
-async function loadTransactions() {
-  const saved = localStorage.getItem('transactions');
-  if (saved) {
-    transactions = JSON.parse(saved);
-  } else {
-    try {
-      const res = await fetch('transactions.json');
-      transactions = await res.json();
-      saveTransactions();
-    } catch (e) {
-      console.error('Ошибка загрузки initial data', e);
-      transactions = [];
+  async loadTransactions() {
+    const saved = localStorage.getItem('transactions');
+    if (saved) {
+      this.transactions = JSON.parse(saved);
+    } else {
+      try {
+        const res = await fetch('transactions.json');
+        this.transactions = await res.json();
+        this.saveTransactions();
+      } catch (e) {
+        console.error('Ошибка загрузки initial data', e);
+        this.transactions = [];
+      }
+    }
+    this.updateCategoryFilter();
+    this.applyFiltersAndSort();
+  }
+
+  saveTransactions() {
+    localStorage.setItem('transactions', JSON.stringify(this.transactions));
+  }
+
+  updateCategoryFilter() {
+    const categories = [...new Set(this.transactions.map(t => t.category))].sort();
+    this.filterCategorySelect.innerHTML =
+      `<option value="all">Все категории</option>` +
+      categories.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  addTransaction(transaction) {
+    this.transactions.push(transaction);
+    this.saveTransactions();
+    this.updateCategoryFilter();
+    this.applyFiltersAndSort();
+  }
+
+  deleteTransaction(id) {
+    this.transactions = this.transactions.filter(t => t.id !== id);
+    this.saveTransactions();
+    this.updateCategoryFilter();
+    this.applyFiltersAndSort();
+  }
+
+  renderTransactions(list) {
+    if (list.length === 0) {
+      this.transactionsList.innerHTML = `<p>Транзакции не найдены.</p>`;
+      return;
+    }
+    this.transactionsList.innerHTML = '';
+    list.forEach(t => {
+      const card = document.createElement('div');
+      card.className = `transaction-card ${t.type === 'income' ? 'income' : 'expense'}`;
+      card.innerHTML = `
+        <div><strong>${t.title}</strong> (${t.category})</div>
+        <div>${t.date}</div>
+        <div>${t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}</div>
+        <button class="delete-btn" data-id="${t.id}">Удалить</button>
+      `;
+      this.transactionsList.appendChild(card);
+    });
+
+    this.transactionsList.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.onclick = () => {
+        const id = +btn.getAttribute('data-id');
+        this.deleteTransaction(id);
+      };
+    });
+  }
+
+  updateChart(list) {
+    const expenses = list.filter(t => t.type === 'expense');
+    const sums = {};
+    expenses.forEach(({ category, amount }) => {
+      sums[category] = (sums[category] || 0) + amount;
+    });
+
+    const labels = Object.keys(sums);
+    const data = Object.values(sums);
+
+    const colors = [
+      '#f44336', '#e57373', '#ba000d', '#ff8a80', '#d32f2f',
+      '#4caf50', '#81c784', '#2e7d32', '#a5d6a7', '#388e3c'
+    ];
+
+    this.expenseChart.data.labels = labels;
+    this.expenseChart.data.datasets[0].data = data;
+    this.expenseChart.data.datasets[0].backgroundColor = colors.slice(0, labels.length);
+    this.expenseChart.update();
+  }
+
+  applyFiltersAndSort() {
+    const typeFilter = this.filterTypeSelect.value;
+    const categoryFilter = this.filterCategorySelect.value;
+
+    this.filteredTransactions = this.transactions.filter(t => {
+      if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+      if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
+      return true;
+    });
+
+    if (this.lastSort === 'date') {
+      this.filteredTransactions.sort((a, b) =>
+        this.sortDirection.date === 'asc'
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date)
+      );
+    } else if (this.lastSort === 'amount') {
+      this.filteredTransactions.sort((a, b) =>
+        this.sortDirection.amount === 'asc' ? a.amount - b.amount : b.amount - a.amount
+      );
+    }
+
+    this.renderTransactions(this.filteredTransactions);
+
+    if (typeFilter === 'income') {
+      this.chartSection.style.display = 'none';
+    } else {
+      this.chartSection.style.display = 'block';
+      this.updateChart(this.filteredTransactions);
     }
   }
-  updateCategoryFilter();
-  applyFiltersAndSort();
-}
 
+  addEventListeners() {
+    this.form.addEventListener('submit', (e) => {
+      e.preventDefault();
 
-function saveTransactions() {
-  localStorage.setItem('transactions', JSON.stringify(transactions));
-}
+      const transaction = {
+        id: Date.now(),
+        title: this.titleInput.value.trim(),
+        amount: +this.amountInput.value,
+        type: this.typeSelect.value,
+        date: this.dateInput.value,
+        category: this.categoryInput.value.trim(),
+      };
 
-// обновление фильтра по категориям
-function updateCategoryFilter() {
-  const categories = [...new Set(transactions.map(t => t.category))].sort();
-  filterCategorySelect.innerHTML = `<option value="all">Все категории</option>` +
-    categories.map(c => `<option value="${c}">${c}</option>`).join('');
-}
+      if (!transaction.title || !transaction.amount || !transaction.date || !transaction.category) {
+        alert('Пожалуйста, заполните все поля корректно');
+        return;
+      }
 
-// добавление транзакции
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  const newTransaction = {
-    id: Date.now(),
-    title: titleInput.value.trim(),
-    amount: +amountInput.value,
-    type: typeSelect.value,
-    date: dateInput.value,
-    category: categoryInput.value.trim(),
-  };
-
-  if (!newTransaction.title || !newTransaction.amount || !newTransaction.date || !newTransaction.category) {
-    alert('Пожалуйста, заполните все поля корректно');
-    return;
-  }
-
-  transactions.push(newTransaction);
-  saveTransactions();
-  updateCategoryFilter();
-  form.reset();
-  applyFiltersAndSort();
-});
-
-// удаление транзакции
-function deleteTransaction(id) {
-  transactions = transactions.filter(t => t.id !== id);
-  saveTransactions();
-  updateCategoryFilter();
-  applyFiltersAndSort();
-}
-
-// рендеринг списка транзакций
-function renderTransactions(list) {
-  if (list.length === 0) {
-    transactionsList.innerHTML = `<p>Транзакции не найдены.</p>`;
-    return;
-  }
-  transactionsList.innerHTML = '';
-  list.forEach(t => {
-    const card = document.createElement('div');
-    card.className = `transaction-card ${t.type === 'income' ? 'income' : 'expense'}`;
-
-    card.innerHTML = `
-      <div><strong>${t.title}</strong> (${t.category})</div>
-      <div>${t.date}</div>
-      <div>${t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}</div>
-      <button class="delete-btn" data-id="${t.id}">Удалить</button>
-    `;
-    transactionsList.appendChild(card);
-  });
-
-  document.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.onclick = () => {
-      const id = +btn.getAttribute('data-id');
-      deleteTransaction(id);
-    };
-  });
-}
-
-// диаграмма (только расходы)
-function updateChart(list) {
-  const expenses = list.filter(t => t.type === 'expense');
-  const sums = {};
-  expenses.forEach(({ category, amount }) => {
-    sums[category] = (sums[category] || 0) + amount;
-  });
-
-  const labels = Object.keys(sums);
-  const data = Object.values(sums);
-
-  // цвета для категорий 
-  const colors = [
-    '#f44336', '#e57373', '#ba000d', '#ff8a80', '#d32f2f',
-    '#4caf50', '#81c784', '#2e7d32', '#a5d6a7', '#388e3c'
-  ];
-
-  expenseChart.data.labels = labels;
-  expenseChart.data.datasets[0].data = data;
-  expenseChart.data.datasets[0].backgroundColor = colors.slice(0, labels.length);
-  expenseChart.update();
-}
-
-// применение фильтров и сортировки
-function applyFiltersAndSort() {
-  const typeFilter = filterTypeSelect.value;
-  const categoryFilter = filterCategorySelect.value;
-
-  filteredTransactions = transactions.filter(t => {
-    if (typeFilter !== 'all' && t.type !== typeFilter) return false;
-    if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
-    return true;
-  });
-
-  // сортировка
-  if (lastSort === 'date') {
-    filteredTransactions.sort((a, b) => {
-      if (sortDirection.date === 'asc') return new Date(a.date) - new Date(b.date);
-      else return new Date(b.date) - new Date(a.date);
+      this.form.reset();
+      this.addTransaction(transaction);
     });
-  } else if (lastSort === 'amount') {
-    filteredTransactions.sort((a, b) => {
-      if (sortDirection.amount === 'asc') return a.amount - b.amount;
-      else return b.amount - a.amount;
+
+    this.filterTypeSelect.addEventListener('change', () => this.applyFiltersAndSort());
+    this.filterCategorySelect.addEventListener('change', () => this.applyFiltersAndSort());
+
+    this.sortDateBtn.addEventListener('click', () => {
+      this.sortDirection.date = this.sortDirection.date === 'asc' ? 'desc' : 'asc';
+      this.lastSort = 'date';
+      this.applyFiltersAndSort();
+    });
+
+    this.sortAmountBtn.addEventListener('click', () => {
+      this.sortDirection.amount = this.sortDirection.amount === 'asc' ? 'desc' : 'asc';
+      this.lastSort = 'amount';
+      this.applyFiltersAndSort();
     });
   }
-
-  renderTransactions(filteredTransactions);
-
-  if (typeFilter === 'income') {
-    chartSection.style.display = 'none';
-  } else {
-    chartSection.style.display = 'block';
-    updateChart(filteredTransactions);
-  }
 }
 
-
-filterTypeSelect.addEventListener('change', () => {
-  applyFiltersAndSort();
+document.addEventListener('DOMContentLoaded', () => {
+  new TransactionManager();
 });
-
-filterCategorySelect.addEventListener('change', () => {
-  applyFiltersAndSort();
-});
-
-let lastSort = null;
-
-sortDateBtn.addEventListener('click', () => {
-  sortDirection.date = sortDirection.date === 'asc' ? 'desc' : 'asc';
-  lastSort = 'date';
-  applyFiltersAndSort();
-});
-
-sortAmountBtn.addEventListener('click', () => {
-  sortDirection.amount = sortDirection.amount === 'asc' ? 'desc' : 'asc';
-  lastSort = 'amount';
-  applyFiltersAndSort();
-});
-
-loadTransactions();
