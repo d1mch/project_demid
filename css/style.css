@@ -24,6 +24,16 @@ h1 {
   font-size: 28px;
 }
 
+.title-icon {
+  width: 20%;
+  height: 20%;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+
+
+
 
 .form-section {
   background-color: #ffffff;
